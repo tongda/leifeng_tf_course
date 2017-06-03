@@ -89,3 +89,9 @@ ENV/
 .ropeproject
 
 */my_graph/
+.DS_Store
+data
+imagenet-vgg-verydeep-19.mat
+checkpoints
+outputs
+train_log
