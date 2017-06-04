@@ -95,3 +95,6 @@ imagenet-vgg-verydeep-19.mat
 checkpoints
 outputs
 train_log
+
+.vscode
+simple-examples
