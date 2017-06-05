@@ -107,7 +107,8 @@ def main(_):
                 state = session.run(_initial_state)
                 fetches = {
                     "cost": cost_op,
-                    "final_state": final_state
+                    "final_state": final_state,
+                    "train_op": train_op
                 }
 
                 for step in range(epoch_size):
