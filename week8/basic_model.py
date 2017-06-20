@@ -11,14 +11,14 @@ class BasicChatBotModel(ChatBotModelBase):
         super(ChatBotModelBase, self).__init__()
         self.batch_size = batch_size
 
-        self.encoder_length_tensor = tf.placeholder(tf.int32, shape=(), name='encoder_len')
         self.encoder_inputs_tensor = tf.placeholder(tf.int32,
-                                                    shape=[config.BUCKETS[0][0], batch_size],
+                                                    shape=[None, batch_size],
                                                     name='encoder_inputs')
         self.decoder_length_tensor = tf.placeholder(tf.int32, shape=(batch_size,), name='decoder_lens')
         self.decoder_inputs_tensor = tf.placeholder(tf.int32,
-                                                    shape=[config.BUCKETS[0][1], batch_size],
+                                                    shape=[None, batch_size],
                                                     name='decoder_inputs')
+        self.bucket_length = tf.placeholder(tf.int32, shape=(2,), name='bucket_length')
 
         self.global_step = tf.contrib.framework.get_global_step()
 
@@ -71,7 +71,7 @@ class BasicChatBotModel(ChatBotModelBase):
             print("enc_final_state.get_shape(), ", enc_final_state.get_shape())
 
             def condition(time, all_outputs, inputs, states):
-                return time < config.BUCKETS[0][1] - 1
+                return time < self.bucket_length[1] - 1
                 # return tf.reduce_all(self.decoder_length_tensor > time)
 
             def body(time, all_outputs, inputs, states):
@@ -108,7 +108,8 @@ class BasicChatBotModel(ChatBotModelBase):
                 logits=final_outputs, labels=self.decoder_inputs_tensor[1:])
 
             loss_mask = tf.sequence_mask(
-                tf.to_int32(self.decoder_length_tensor), tf.to_int32(config.BUCKETS[0][1] - 1))
+                tf.to_int32(self.decoder_length_tensor), self.bucket_length[1] - 1)
+
             losses = losses * tf.transpose(tf.to_float(loss_mask), [1, 0])
             # self.loss = tf.reduce_mean(losses)
             self.loss = tf.reduce_sum(losses) / tf.to_float(tf.reduce_sum(self.decoder_length_tensor - 1))

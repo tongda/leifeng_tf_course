@@ -1,3 +1,5 @@
+import random
+
 import tensorflow as tf
 
 from attention_model import AttentionChatBotModel
@@ -15,8 +17,14 @@ def need_print_log(step):
         return step % 200 == 0
 
 
+def _get_random_bucket(train_buckets_scale):
+    """ Get a random bucket from which to choose a training sample """
+    rand = random.random()
+    return min([i for i in range(len(train_buckets_scale))
+                if train_buckets_scale[i] > rand])
+
+
 def train(use_attention, num_steps=1000, ckpt_dir="./ckp-dir/", write_summary=True, tag=None):
-    bucket_id = 0
     test_buckets, data_buckets, train_buckets_scale = get_buckets()
 
     if not use_attention:
@@ -37,11 +45,13 @@ def train(use_attention, num_steps=1000, ckpt_dir="./ckp-dir/", write_summary=Tr
         summary_writer = tf.summary.FileWriter(log_root + exp_name, graph=sess.graph)
         sess.run(tf.global_variables_initializer())
         for step in range(num_steps + 1):
+            bucket_id = _get_random_bucket(train_buckets_scale)
             encoder_inputs, decoder_inputs, decoder_masks = data.get_batch(
                 data_buckets[bucket_id], bucket_id, batch_size=config.BATCH_SIZE)
             decoder_lens = np.sum(np.transpose(np.array(decoder_masks), (1, 0)), axis=1)
             feed_dict = {model.encoder_inputs_tensor: encoder_inputs, model.decoder_inputs_tensor: decoder_inputs,
-                         model.decoder_length_tensor: decoder_lens}
+                         model.decoder_length_tensor: decoder_lens,
+                         model.bucket_length: config.BUCKETS[bucket_id]}
             output_logits, res_loss, _ = sess.run([model.final_outputs, model.loss, model.train_op],
                                                   feed_dict=feed_dict)
 
@@ -54,4 +64,4 @@ def train(use_attention, num_steps=1000, ckpt_dir="./ckp-dir/", write_summary=Tr
 
 
 if __name__ == '__main__':
-    train(True, num_steps=100, write_summary=True, tag="3_layers_with_weights")
+    train(True, num_steps=100, write_summary=False, tag="3_layers_with_weights")

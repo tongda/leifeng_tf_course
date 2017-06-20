@@ -21,7 +21,7 @@ class AttentionChatBotModel(BasicChatBotModel):
             cell = tf.nn.rnn_cell.GRUCell(num_units=config.HIDDEN_SIZE)
 
             def condition(time, all_outputs, inputs, states):
-                return time < config.BUCKETS[0][1] - 1
+                return time < self.bucket_length[1] - 1
                 # return tf.reduce_all(self.decoder_length_tensor > time)
 
             def body(time, all_outputs, inputs, states):
