@@ -54,4 +54,4 @@ def train(use_attention, num_steps=1000, ckpt_dir="./ckp-dir/", write_summary=Tr
 
 
 if __name__ == '__main__':
-    train(False, num_steps=100, write_summary=True, tag="3_layers_with_weights")
+    train(True, num_steps=100, write_summary=True, tag="3_layers_with_weights")

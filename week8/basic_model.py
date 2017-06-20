@@ -82,6 +82,7 @@ class BasicChatBotModel(ChatBotModelBase):
 
                 output_label = tf.arg_max(output_logits, dimension=1)
                 next_input = tf.nn.embedding_lookup(W, output_label)
+                next_input.set_shape((self.batch_size, config.HIDDEN_SIZE))
 
                 return time + 1, all_outputs, next_input, dec_state
 

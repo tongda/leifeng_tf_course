@@ -50,7 +50,11 @@ class AttentionChatBotModel(BasicChatBotModel):
                 print("output_logits:", output_logits.get_shape())
                 all_outputs = all_outputs.write(time, output_logits)
 
-                next_input = tf.concat([target_embedded[time + 1], context], 1)
+                output_label = tf.arg_max(output_logits, dimension=1)
+                next_input_embedding = tf.nn.embedding_lookup(W, output_label)
+                next_input_embedding.set_shape((self.batch_size, config.HIDDEN_SIZE))
+                next_input = tf.concat([next_input_embedding, context], 1)
+                # next_input = tf.concat([target_embedded[time + 1], context], 1)
 
                 return time + 1, all_outputs, next_input, dec_state
 

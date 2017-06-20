@@ -103,4 +103,4 @@ def chat(use_attention, ckpt_path="./ckp-dir/checkpoints"):
 
 
 if __name__ == '__main__':
-    chat(False, ckpt_path="./ckp-dir/basic-step_1000-batch_64-lr_0.1-3_layers/checkpoints")
+    chat(False, ckpt_path="./ckp-dir/basic-step_100-batch_64-lr_0.001-3_layers_with_weights/checkpoints")
