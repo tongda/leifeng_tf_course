@@ -80,7 +80,10 @@ class BasicChatBotModel(ChatBotModelBase):
                                                                   activation_fn=None)
                 all_outputs = all_outputs.write(time, output_logits)
 
-                return time + 1, all_outputs, target_embedded[time + 1], dec_state
+                output_label = tf.arg_max(output_logits, dimension=1)
+                next_input = tf.nn.embedding_lookup(W, output_label)
+
+                return time + 1, all_outputs, next_input, dec_state
 
             output_ta = tensor_array_ops.TensorArray(dtype=tf.float32,
                                                      size=0,
@@ -113,7 +116,9 @@ class BasicChatBotModel(ChatBotModelBase):
             trainables = tf.trainable_variables()
             self.grads = self.optimizer.compute_gradients(self.loss, trainables)
             tf.summary.scalar("loss", self.loss)
-            for gradient, variable in self.grads:
-                tf.summary.histogram("gradients/{}".format(variable.name.replace(":", "_")), gradient)
             train_op = self.optimizer.apply_gradients(self.grads, global_step=self.global_step)
+        for gradient, variable in self.grads:
+            tf.summary.histogram("gradients/{}".format(variable.name.replace(":", "_")), gradient)
+            tf.summary.histogram("variable/{}".format(variable.name.replace(":", "_")), variable)
+
         return train_op

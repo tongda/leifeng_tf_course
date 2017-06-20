@@ -34,7 +34,7 @@ def train(use_attention, num_steps=1000, ckpt_dir="./ckp-dir/", write_summary=Tr
                    "-lr_" + str(config.LR)
         if tag:
             exp_name += "-" + tag
-        summary_writer = tf.summary.FileWriter(log_root + exp_name)
+        summary_writer = tf.summary.FileWriter(log_root + exp_name, graph=sess.graph)
         sess.run(tf.global_variables_initializer())
         for step in range(num_steps + 1):
             encoder_inputs, decoder_inputs, decoder_masks = data.get_batch(
@@ -54,4 +54,4 @@ def train(use_attention, num_steps=1000, ckpt_dir="./ckp-dir/", write_summary=Tr
 
 
 if __name__ == '__main__':
-    train(True, num_steps=1000, write_summary=True, tag="3_layers")
+    train(False, num_steps=100, write_summary=True, tag="3_layers_with_weights")
