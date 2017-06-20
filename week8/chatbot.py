@@ -84,7 +84,7 @@ def chat(use_attention, ckpt_path="./ckp-dir/checkpoints"):
                 continue
             # Which bucket does it belong to?
             # bucket_id = _find_right_bucket(len(token_ids))
-            bucket_id = 0
+            bucket_id = -1
             # Get a 1-element batch to feed the sentence to the model.
             encoder_inputs, decoder_inputs, decoder_masks = data.get_batch([(token_ids, [])],
                                                                            bucket_id,
@@ -94,7 +94,8 @@ def chat(use_attention, ckpt_path="./ckp-dir/checkpoints"):
             output_logits = sess.run([model.final_outputs],
                                      feed_dict={model.encoder_inputs_tensor: encoder_inputs,
                                                 model.decoder_inputs_tensor: decoder_inputs,
-                                                model.decoder_length_tensor: decoder_lens})
+                                                model.decoder_length_tensor: decoder_lens,
+                                                model.bucket_length: config.BUCKETS[bucket_id]})
             response = _construct_response(output_logits, inv_dec_vocab)
             print(response)
             output_file.write('BOT ++++ ' + response + '\n')

@@ -25,7 +25,9 @@ class AttentionChatBotModel(BasicChatBotModel):
                 # return tf.reduce_all(self.decoder_length_tensor > time)
 
             def body(time, all_outputs, inputs, states):
-                dec_outputs, dec_state = cell(inputs=inputs, state=states)
+                cell_state_input = tf.contrib.layers.fully_connected(inputs=states, num_outputs=config.HIDDEN_SIZE,
+                                                                     activation_fn=None)
+                dec_outputs, dec_state = cell(inputs=inputs, state=cell_state_input)
 
                 # calculate attention
                 att_keys = tf.contrib.layers.fully_connected(inputs=enc_outputs, num_outputs=config.CONTEXT_SIZE,
@@ -56,7 +58,7 @@ class AttentionChatBotModel(BasicChatBotModel):
                 next_input = tf.concat([next_input_embedding, context], 1)
                 # next_input = tf.concat([target_embedded[time + 1], context], 1)
 
-                return time + 1, all_outputs, next_input, dec_state
+                return time + 1, all_outputs, next_input, tf.concat([dec_state, context], 1)
 
             output_ta = tensor_array_ops.TensorArray(dtype=tf.float32,
                                                      size=0,
@@ -71,7 +73,8 @@ class AttentionChatBotModel(BasicChatBotModel):
             res = control_flow_ops.while_loop(
                 condition,
                 body,
-                loop_vars=[0, output_ta, init_inputs, enc_final_state],
+                loop_vars=[0, output_ta, init_inputs, tf.concat(
+                    [enc_final_state, tf.zeros(dtype=tf.float32, shape=(self.batch_size, config.CONTEXT_SIZE))], 1)],
             )
             final_outputs = res[1].stack()
             final_state = res[3]
