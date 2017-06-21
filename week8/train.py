@@ -1,3 +1,4 @@
+import argparse
 import random
 
 import tensorflow as tf
@@ -33,13 +34,15 @@ def train(use_attention, num_steps=1000, ckpt_dir="./ckp-dir/", write_summary=Tr
         model = AttentionChatBotModel(batch_size=config.BATCH_SIZE)
     model.build()
 
-    with tf.Session() as sess:
+    cfg = tf.ConfigProto()
+    cfg.gpu_options.allow_growth = True
+    with tf.Session(config=cfg) as sess:
         saver = tf.train.Saver()
         log_root = "./logs/"
-        exp_name = ("attention" if use_attention else "basic") + \
-                   "-step_" + str(num_steps) + \
-                   "-batch_" + str(config.BATCH_SIZE) + \
-                   "-lr_" + str(config.LR)
+        exp_name = (("attention" if use_attention else "basic") +
+                    "-step_" + str(num_steps) +
+                    "-batch_" + str(config.BATCH_SIZE) +
+                    "-lr_" + str(config.LR))
         if tag:
             exp_name += "-" + tag
         summary_writer = tf.summary.FileWriter(log_root + exp_name, graph=sess.graph)
@@ -63,5 +66,20 @@ def train(use_attention, num_steps=1000, ckpt_dir="./ckp-dir/", write_summary=Tr
                 saver.save(sess, ckpt_dir + exp_name + "/checkpoints", global_step=step)
 
 
+def create_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--use-attention", dest="use_attention", action="store_true",
+                        help="Flag of whether to use attention.")
+    parser.add_argument("--num-steps", dest="num_steps", type=int, default=10,
+                        help="Number of steps.")
+    parser.add_argument("--write-summary", dest="write_summary", action="store_true",
+                        help="Flag of whether to write summaries.")
+    parser.add_argument("--tag", dest="tag", type=str, default=None,
+                        help="Tag of experiment.")
+    return parser
+
+
 if __name__ == '__main__':
-    train(True, num_steps=100, write_summary=False, tag="3_layers_with_weights")
+    parser = create_parser()
+    args = parser.parse_args()
+    train(args.use_attention, num_steps=args.num_steps, write_summary=args.write_summary, tag=args.tag)

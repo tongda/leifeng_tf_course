@@ -25,38 +25,36 @@ class AttentionChatBotModel(BasicChatBotModel):
                 # return tf.reduce_all(self.decoder_length_tensor > time)
 
             def body(time, all_outputs, inputs, states):
-                cell_state_input = tf.contrib.layers.fully_connected(inputs=states, num_outputs=config.HIDDEN_SIZE,
-                                                                     activation_fn=None)
-                dec_outputs, dec_state = cell(inputs=inputs, state=cell_state_input)
+                with tf.variable_scope('cell_calculate'):
+                    cell_state_input = tf.contrib.layers.fully_connected(
+                        inputs=states, num_outputs=config.HIDDEN_SIZE, activation_fn=None)
+                    dec_outputs, dec_state = cell(inputs=inputs, state=cell_state_input)
 
                 # calculate attention
-                att_keys = tf.contrib.layers.fully_connected(inputs=enc_outputs, num_outputs=config.CONTEXT_SIZE,
-                                                             activation_fn=None)
-                att_query = tf.contrib.layers.fully_connected(inputs=dec_outputs, num_outputs=config.CONTEXT_SIZE,
-                                                              activation_fn=None)
-                scores = tf.reduce_sum(att_keys * tf.expand_dims(att_query, 0), [2])
-                scores_normalized = tf.nn.softmax(scores, dim=0)
-                context = tf.expand_dims(scores_normalized, 2) * enc_outputs
-                context = tf.reduce_sum(context, [0], name="context")
-                print(dec_outputs.get_shape())
-                print(att_keys.get_shape())
-                print(att_query.get_shape())
-                print(scores.get_shape())
-                print(scores_normalized.get_shape())
-                print(context.get_shape())
+                with tf.variable_scope('attention_calculate') as scope:
+                    att_keys = tf.contrib.layers.fully_connected(
+                        inputs=enc_outputs, num_outputs=config.CONTEXT_SIZE, activation_fn=None)
+                    att_query = tf.contrib.layers.fully_connected(
+                        inputs=dec_outputs, num_outputs=config.CONTEXT_SIZE, activation_fn=None)
+                    scores = tf.reduce_sum(att_keys * tf.expand_dims(att_query, 0), [2])
+                    scores_normalized = tf.nn.softmax(scores, dim=0)
+                    context = tf.expand_dims(scores_normalized, 2) * enc_outputs
+                    context = tf.reduce_sum(context, [0], name="context")
 
-                projection_input = tf.concat([dec_outputs, context], 1)
-                print("projection_input:", projection_input.get_shape())
-                output_logits = tf.contrib.layers.fully_connected(inputs=projection_input, num_outputs=config.DEC_VOCAB,
-                                                                  activation_fn=None)
-                print("output_logits:", output_logits.get_shape())
-                all_outputs = all_outputs.write(time, output_logits)
+                with tf.variable_scope('output_calculate') as scope:
+                    projection_input = tf.concat([dec_outputs, context], 1)
+                    print("projection_input:", projection_input.get_shape())
+                    output_logits = tf.contrib.layers.fully_connected(
+                        inputs=projection_input, num_outputs=config.DEC_VOCAB, activation_fn=None)
+                    print("output_logits:", output_logits.get_shape())
+                    all_outputs = all_outputs.write(time, output_logits)
 
-                output_label = tf.arg_max(output_logits, dimension=1)
-                next_input_embedding = tf.nn.embedding_lookup(W, output_label)
-                next_input_embedding.set_shape((self.batch_size, config.HIDDEN_SIZE))
-                next_input = tf.concat([next_input_embedding, context], 1)
-                # next_input = tf.concat([target_embedded[time + 1], context], 1)
+                with tf.variable_scope('next_input_calculate') as scope:
+                    output_label = tf.arg_max(output_logits, dimension=1)
+                    next_input_embedding = tf.nn.embedding_lookup(W, output_label)
+                    next_input_embedding.set_shape((self.batch_size, config.HIDDEN_SIZE))
+                    next_input = tf.concat([next_input_embedding, context], 1)
+                    # next_input = tf.concat([target_embedded[time + 1], context], 1)
 
                 return time + 1, all_outputs, next_input, tf.concat([dec_state, context], 1)
 
