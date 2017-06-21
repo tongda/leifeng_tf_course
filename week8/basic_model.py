@@ -23,8 +23,11 @@ class BasicChatBotModel(ChatBotModelBase):
         self.global_step = tf.contrib.framework.get_global_step()
 
     @property
-    def summaries(self):
-        return tf.summary.merge_all()
+    def summaries(self, use_all=False):
+        if use_all:
+            return tf.summary.merge_all()
+        else:
+            tf.summary.merge(['loss'])
 
     def build(self):
         enc_outputs, enc_final_state = self.encode()
