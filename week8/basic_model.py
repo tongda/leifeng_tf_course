@@ -27,7 +27,7 @@ class BasicChatBotModel(ChatBotModelBase):
         if use_all:
             return tf.summary.merge_all()
         else:
-            tf.summary.merge(['loss'])
+            return tf.summary.merge(['loss'])
 
     def build(self):
         enc_outputs, enc_final_state = self.encode()
